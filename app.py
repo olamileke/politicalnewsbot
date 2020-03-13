@@ -1,4 +1,5 @@
 from telegram.ext import Updater, CommandHandler
+from middlewares import subscribed_middleware
 import config
 import json
 import os.path as path
@@ -44,6 +45,7 @@ def subscribe(update, context):
     context.bot.send_message(chat_id=chat_id, text=text)
 
 
+@subscribed_middleware
 def unsubscribe(update, context):
     chat_id = str(update.effective_chat.id)
     with open(path.join(config.base_directory, 'subscribers.json')) as reader:
@@ -54,15 +56,21 @@ def unsubscribe(update, context):
     with open(path.join(config.base_directory, 'subscribers.json'), 'w') as writer:
         json.dump(data, writer)
 
-    context.bot.send_message(chat_id=chat_id, text='Unsubscribed successfully!')
+    context.bot.send_message(
+        chat_id=chat_id, text='Unsubscribed successfully!')
 
 
 def get_next_alert_information():
     current_time = time.localtime()
     minutes = time.strftime('%M', current_time)
     seconds = time.strftime('%S', current_time)
-    rem_minutes = 60 - (int(minutes) + 1)
-    rem_seconds = 60 - int(seconds)
+
+    if seconds == 0:
+        rem_minutes = 60 - int(minutes)
+        rem_seconds = seconds
+    else:
+        rem_minutes = 60 - (int(minutes) + 1)
+        rem_seconds = 60 - int(seconds)
 
     return {'minutes': rem_minutes, 'seconds': rem_seconds}
 
