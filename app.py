@@ -1,5 +1,5 @@
 from telegram import ParseMode
-from telegram.ext import Updater, CommandHandler
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from middlewares import subscribed_middleware
 from endpoints import call_endpoint
 import config
@@ -42,7 +42,7 @@ def subscribe(update, context):
     with open(path.join(config.base_directory, 'subscribers.json'), 'w') as writer:
         json.dump(data, writer)
 
-    next_alert_time = get_next_alert_information()
+    next_alert_time = get_next_alert_time()
     minutes = next_alert_time['minutes']
     seconds = next_alert_time['seconds']
     text = 'Subscribed successfully. My next alert is in {0} minutes and {1} seconds.\nType /unsubscribe to stop getting my alerts'.format(
@@ -66,7 +66,7 @@ def unsubscribe(update, context):
         chat_id=chat_id, text='Unsubscribed successfully!')
 
 
-def get_next_alert_information():
+def get_next_alert_time():
     current_time = time.localtime()
     minutes = time.strftime('%M', current_time)
     seconds = time.strftime('%S', current_time)
@@ -81,22 +81,35 @@ def get_next_alert_information():
     return {'minutes': rem_minutes, 'seconds': rem_seconds}
 
 
+def unknown(update, context):
+    context.bot.send_message(
+        chat_id=update.effective_chat.id, text="I'm sorry. I do not understand that.")
+
+
 # Job Functions
 def alert(context):
-    with open(path.join(config.base_directory, 'alerts.json')) as reader:
-        data = json.load(reader)
+    current_hour = int(time.strftime('%H'))
+    print(current_hour)
 
-    with open(path.join(config.base_directory, 'subscribers.json')) as reader:
-        subscribers = json.load(reader)
+    if current_hour > 5 and current_hour < 22:
+        with open(path.join(config.base_directory, 'alerts.json')) as reader:
+            data = json.load(reader)
 
-    if len(data['articles']) == 0:
-        data['articles'] = call_endpoint()
-        with open(path.join(config.base_directory, 'alerts.json'), 'w') as writer:
-            json.dump(data, writer)
+        with open(path.join(config.base_directory, 'subscribers.json')) as reader:
+            subscribers = json.load(reader)
 
-    print(len(data['articles']))
-    for chat_id in subscribers['subscribers']:
-        send_article(context, chat_id, data['articles'][11])
+        if len(data['articles']) == 0:
+            data['articles'] = call_endpoint()
+            with open(path.join(config.base_directory, 'alerts.json'), 'w') as writer:
+                json.dump(data, writer)
+
+        for chat_id in subscribers['subscribers']:
+            send_article(context, chat_id, data['articles'][current_hour - 6])
+
+        if current_hour == 21:
+            data['articles'] = []
+            with open(path.join(config.base_directory, 'alerts.json'), 'w') as writer:
+                json.dump(data, writer)
 
 
 def send_article(context, chat_id, article):
@@ -108,18 +121,26 @@ def send_article(context, chat_id, article):
         chat_id=chat_id, text=source_text, parse_mode=ParseMode.HTML)
 
 
-job.run_once(alert, 2)
+def seconds_from_start():
+    current_time = time.localtime()
+    mins_till_next_hour = 60 - (int(time.strftime('%M', current_time)) + 1)
+    secs_till_next_hour = (mins_till_next_hour * 60) + (60 - int(time.strftime('%S', current_time)))
+    return secs_till_next_hour
+
+
+job.run_repeating(alert, interval=3600, first=seconds_from_start())
 
 # Creating the Handlers
 start_handler = CommandHandler('start', start)
 subscribe_handler = CommandHandler('subscribe', subscribe)
 unsubscribe_handler = CommandHandler('unsubscribe', unsubscribe)
-
+unknown_handler = MessageHandler(Filters.all, unknown)
 
 # Adding the handlers to the dispatcher
 dispatcher.add_handler(start_handler)
 dispatcher.add_handler(subscribe_handler)
 dispatcher.add_handler(unsubscribe_handler)
+dispatcher.add_handler(unknown_handler)
 
 
 # Running the bot
