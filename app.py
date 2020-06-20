@@ -45,8 +45,14 @@ def subscribe(update, context):
     next_alert_time = get_next_alert_time()
     minutes = next_alert_time['minutes']
     seconds = next_alert_time['seconds']
-    text = 'Subscribed successfully. My next alert is in {0} minutes and {1} seconds.\nType /unsubscribe to stop getting my alerts'.format(
+    hours = next_alert_time.get('hours')
+
+    if hours is None:
+        text = 'Subscribed successfully. My next alert is in {0} minutes and {1} seconds.\nType /unsubscribe to stop getting my alerts'.format(
         minutes, seconds)
+    else:
+        text = 'Subscribed successfully. My next alert is in {0} hours {1} minutes and {2} seconds.\nType /unsubscribe to stop getting my alerts'.format(
+        hours, minutes, seconds)
 
     context.bot.send_message(chat_id=chat_id, text=text)
 
@@ -68,8 +74,19 @@ def unsubscribe(update, context):
 
 def get_next_alert_time():
     current_time = time.localtime()
+    hours = int(time.strftime('%H'))
     minutes = time.strftime('%M', current_time)
-    seconds = time.strftime('%S', current_time)
+    seconds = time.strftime('%S', current_time)    
+    has_hours = False
+
+    if hours > 20 or hours < 5:
+        if hours > 20:
+            hours = 30 - (hours + 1)
+        else:
+            hours = 6 - (hours + 1)
+
+        has_hours = True
+
 
     if seconds == 0:
         rem_minutes = 60 - int(minutes)
@@ -77,6 +94,9 @@ def get_next_alert_time():
     else:
         rem_minutes = 60 - (int(minutes) + 1)
         rem_seconds = 60 - int(seconds)
+
+    if has_hours:
+        return {'hours':hours, 'minutes': rem_minutes, 'seconds': rem_seconds}
 
     return {'minutes': rem_minutes, 'seconds': rem_seconds}
 
@@ -89,7 +109,6 @@ def unknown(update, context):
 # Job Functions
 def alert(context):
     current_hour = int(time.strftime('%H'))
-    print(current_hour)
 
     if current_hour > 5 and current_hour < 22:
         with open(path.join(config.base_directory, 'alerts.json')) as reader:
@@ -116,7 +135,8 @@ def send_article(context, chat_id, article):
     url = article['url']
     source_text = "<a href='{0}'>Read more</a>".format(url)
     context.bot.send_message(chat_id=chat_id, text=article['title'])
-    context.bot.send_message(chat_id=chat_id, text=article['content'])
+    if article['content'] is not None:
+        context.bot.send_message(chat_id=chat_id, text=article['content'])
     context.bot.send_message(
         chat_id=chat_id, text=source_text, parse_mode=ParseMode.HTML)
 
@@ -128,7 +148,9 @@ def seconds_from_start():
     return secs_till_next_hour
 
 
+# Job to alert subscribers with news
 job.run_repeating(alert, interval=3600, first=seconds_from_start())
+
 
 # Creating the Handlers
 start_handler = CommandHandler('start', start)
