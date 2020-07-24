@@ -2,8 +2,5 @@
 # Virtual Machine Folder
 venv
 
-# Config Folder
-config.py
-
 # Pycache
 __pycache__
