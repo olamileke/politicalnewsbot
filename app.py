@@ -76,7 +76,7 @@ def get_next_alert_time():
     current_time = time.localtime()
     hours = int(time.strftime('%H'))
     minutes = time.strftime('%M', current_time)
-    seconds = time.strftime('%S', current_time)    
+    seconds = time.strftime('%S', current_time)
     has_hours = False
 
     if hours > 20 or hours < 5:
