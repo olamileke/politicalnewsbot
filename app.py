@@ -139,9 +139,10 @@ def alert(context):
 
         with open(path.join(config.base_directory, 'stored_alerts.json')) as reader:
             stored_alerts = json.load(reader)
-            for chat_id in subscribers['subscribers']:
-                stored_alerts[chat_id].append(
-                    data['articles'][current_hour - 6])
+            
+        for chat_id in subscribers['subscribers']:
+            stored_alerts[chat_id].append(
+                data['articles'][current_hour - 6])
 
         with open(path.join(config.base_directory, 'stored_alerts.json'), 'w') as writer:
             json.dump(stored_alerts, writer)
@@ -162,7 +163,7 @@ def history(update, context):
         stored_alerts = json.load(reader)
 
     articles = stored_alerts[chat_id]
-    num_alerts = len(articles)
+    num_articles = len(articles)
 
     if num_articles == 0:
         return context.bot.send_message(chat_id=chat_id, text="There are no articles to display")

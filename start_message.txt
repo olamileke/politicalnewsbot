@@ -1,2 +1,3 @@
 Hi there! I am here to keep you up to date with the news.
-Type /subscribe to get my alerts.
+Type /subscribe to get my alerts. 
+To see all the articles I have sent you, type /history.
