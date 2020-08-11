@@ -42,6 +42,14 @@ def subscribe(update, context):
     with open(path.join(config.base_directory, 'subscribers.json'), 'w') as writer:
         json.dump(data, writer)
 
+    with open(path.join(config.base_directory, 'stored_alerts.json')) as reader:
+        stored_alerts = json.load(reader)
+
+    stored_alerts[chat_id] = []
+
+    with open(path.join(config.base_directory, 'stored_alerts.json'), 'w') as writer:
+        json.dump(stored_alerts, writer)
+
     next_alert_time = get_next_alert_time()
     minutes = next_alert_time['minutes']
     seconds = next_alert_time['seconds']
@@ -49,10 +57,10 @@ def subscribe(update, context):
 
     if hours is None:
         text = 'Subscribed successfully. My next alert is in {0} minutes and {1} seconds.\nType /unsubscribe to stop getting my alerts'.format(
-        minutes, seconds)
+            minutes, seconds)
     else:
         text = 'Subscribed successfully. My next alert is in {0} hours {1} minutes and {2} seconds.\nType /unsubscribe to stop getting my alerts'.format(
-        hours, minutes, seconds)
+            hours, minutes, seconds)
 
     context.bot.send_message(chat_id=chat_id, text=text)
 
@@ -67,6 +75,14 @@ def unsubscribe(update, context):
 
     with open(path.join(config.base_directory, 'subscribers.json'), 'w') as writer:
         json.dump(data, writer)
+
+    with open(path.join(config.base_directory, 'stored_alerts.json')) as reader:
+        stored_alerts = json.load(reader)
+
+    del stored_alerts[chat_id]
+
+    with open(path.join(config.base_directory, 'stored_alerts.json'), 'w') as writer:
+        json.dump(stored_alerts, writer)
 
     context.bot.send_message(
         chat_id=chat_id, text='Unsubscribed successfully!')
@@ -87,7 +103,6 @@ def get_next_alert_time():
 
         has_hours = True
 
-
     if seconds == 0:
         rem_minutes = 60 - int(minutes)
         rem_seconds = seconds
@@ -96,7 +111,7 @@ def get_next_alert_time():
         rem_seconds = 60 - int(seconds)
 
     if has_hours:
-        return {'hours':hours, 'minutes': rem_minutes, 'seconds': rem_seconds}
+        return {'hours': hours, 'minutes': rem_minutes, 'seconds': rem_seconds}
 
     return {'minutes': rem_minutes, 'seconds': rem_seconds}
 
@@ -122,6 +137,15 @@ def alert(context):
             with open(path.join(config.base_directory, 'alerts.json'), 'w') as writer:
                 json.dump(data, writer)
 
+        with open(path.join(config.base_directory, 'stored_alerts.json')) as reader:
+            stored_alerts = json.load(reader)
+            for chat_id in subscribers['subscribers']:
+                stored_alerts[chat_id].append(
+                    data['articles'][current_hour - 6])
+
+        with open(path.join(config.base_directory, 'stored_alerts.json'), 'w') as writer:
+            json.dump(stored_alerts, writer)
+
         for chat_id in subscribers['subscribers']:
             send_article(context, chat_id, data['articles'][current_hour - 6])
 
@@ -130,6 +154,21 @@ def alert(context):
             with open(path.join(config.base_directory, 'alerts.json'), 'w') as writer:
                 json.dump(data, writer)
 
+@subscribed_middleware
+def history(update, context):
+    chat_id = str(update.effective_chat.id)
+
+    with open(path.join(config.base_directory, 'stored_alerts.json')) as reader:
+        stored_alerts = json.load(reader)
+
+    articles = stored_alerts[chat_id]
+    num_alerts = len(articles)
+
+    if num_articles == 0:
+        return context.bot.send_message(chat_id=chat_id, text="There are no articles to display")
+
+    for i in range(0, num_articles):
+        send_article(context, chat_id, articles[i])
 
 def send_article(context, chat_id, article):
     url = article['url']
@@ -144,7 +183,8 @@ def send_article(context, chat_id, article):
 def seconds_from_start():
     current_time = time.localtime()
     mins_till_next_hour = 60 - (int(time.strftime('%M', current_time)) + 1)
-    secs_till_next_hour = (mins_till_next_hour * 60) + (60 - int(time.strftime('%S', current_time)))
+    secs_till_next_hour = (mins_till_next_hour * 60) + \
+        (60 - int(time.strftime('%S', current_time)))
     return secs_till_next_hour
 
 
@@ -156,12 +196,14 @@ job.run_repeating(alert, interval=3600, first=seconds_from_start())
 start_handler = CommandHandler('start', start)
 subscribe_handler = CommandHandler('subscribe', subscribe)
 unsubscribe_handler = CommandHandler('unsubscribe', unsubscribe)
+history_handler = CommandHandler('history', history)
 unknown_handler = MessageHandler(Filters.all, unknown)
 
 # Adding the handlers to the dispatcher
 dispatcher.add_handler(start_handler)
 dispatcher.add_handler(subscribe_handler)
 dispatcher.add_handler(unsubscribe_handler)
+dispatcher.add_handler(history_handler)
 dispatcher.add_handler(unknown_handler)
 
 
