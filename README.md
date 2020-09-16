@@ -9,7 +9,7 @@ Alternatively, open up the Telegram app and search for **thenewsbot**.
 To run this bot locally, you need to have python3+ on your system. Get it 
 [here](https://https://www.python.org/downloads/ "here"). Make sure to add python.exe to your operating system path variables to be able to run python scripts from the command line.
 
-You also need a telegram bot token and a newsapi api key. Follow the instructions [here](https://core.telegram.org/bots#6-botfather "here") to create a new bot with its authorization token. Get a newsapi api key [here](https://newsapi.org/ "here").
+You also need a telegram bot token and a newsapi api key. Follow the instructions found [here](https://core.telegram.org/bots#6-botfather "here") to create a new bot with its authorization token. Get a newsapi api key [here](https://newsapi.org/ "here").
 
 Navigate into a directory of choice on your system via the terminal and clone this repository by running 
 
