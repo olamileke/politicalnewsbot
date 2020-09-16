@@ -39,6 +39,6 @@ Still in the app root in the terminal, run
 python app.py
 ```
 
-Open up the Telegram to communicate with the bot.
+Open up the Telegram app to communicate with your bot.
 
 
