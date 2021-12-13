@@ -1,5 +1,9 @@
+from dotenv import load_dotenv
 import os.path as path
 
 base_directory = path.dirname(__file__)
-bot_token = ""
-api_key = ""
+
+def set():
+    env_path = path.join(base_directory, ".env")
+    load_dotenv(env_path)
+

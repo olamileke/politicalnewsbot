@@ -1,9 +1,9 @@
+import os
 import requests
-from config import api_key
 
 
 def create_endpoint():
-    return "http://newsapi.org/v2/top-headlines?country=ng&apiKey={0}".format(api_key)
+    return "http://newsapi.org/v2/top-headlines?country=ng&apiKey={0}".format(os.environ.get("NEWS_API_KEY"))
 
 
 def call_endpoint():

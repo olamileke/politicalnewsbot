@@ -1,10 +1,10 @@
 from telegram import ParseMode
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from os import path, environ
 from middlewares import subscribed_middleware
 from endpoints import call_endpoint
 import config
 import json
-import os.path as path
 import logging
 import time
 
@@ -13,9 +13,11 @@ import time
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 
+# Setting the relevant environment variables
+config.set()
 
 # Initializing relevant variables
-updater = Updater(token=config.bot_token, use_context=True)
+updater = Updater(token=environ.get("BOT_TOKEN"), use_context=True)
 dispatcher = updater.dispatcher
 job = updater.job_queue
 
