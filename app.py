@@ -17,7 +17,8 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 config.set()
 
 # Initializing relevant variables
-updater = Updater(token=environ.get("BOT_TOKEN"), use_context=True)
+token = os.environ.get("BOT_TOKEN")
+updater = Updater(token=token, use_context=True)
 dispatcher = updater.dispatcher
 job = updater.job_queue
 
@@ -167,6 +168,8 @@ dispatcher.add_handler(unsubscribe_handler)
 dispatcher.add_handler(unknown_handler)
 
 
-# Running the bot
-updater.start_polling()
+# Starting the bot
+updater.start_webhook(listen=os.environ.get("BOT_HOST"), port=os.environ.get("BOT_PORT"), url_path=token)
+updater.bot.set_webhook(url="{0}{1}".format(os.environ.get("BOT_URL"), token))
+
 updater.idle()
