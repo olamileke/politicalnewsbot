@@ -3,6 +3,8 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 from os import path, environ
 from middlewares import subscribed_middleware
 from endpoints import call_endpoint
+from datetime import datetime
+import pytz
 import config
 import json
 import logging
@@ -17,7 +19,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 config.set()
 
 # Initializing relevant variables
-token = os.environ.get("BOT_TOKEN")
+token = environ.get("BOT_TOKEN")
 updater = Updater(token=token, use_context=True)
 dispatcher = updater.dispatcher
 job = updater.job_queue
@@ -111,7 +113,7 @@ def unknown(update, context):
 
 # Job Functions
 def alert(context):
-    current_hour = int(time.strftime('%H'))
+    current_hour = int(datetime.now((pytz.timezone('Africa/Lagos'))).strftime("%H"))
 
     if current_hour > 5 and current_hour < 22:
         with open(path.join(config.base_directory, 'alerts.json')) as reader:
@@ -169,7 +171,7 @@ dispatcher.add_handler(unknown_handler)
 
 
 # Starting the bot
-updater.start_webhook(listen=os.environ.get("BOT_HOST"), port=os.environ.get("BOT_PORT"), url_path=token)
-updater.bot.set_webhook(url="{0}{1}".format(os.environ.get("BOT_URL"), token))
+updater.start_webhook(listen=environ.get("BOT_HOST"), port=environ.get("BOT_PORT"), url_path=token)
+updater.bot.set_webhook(url="{0}{1}".format(environ.get("BOT_URL"), token))
 
 updater.idle()
