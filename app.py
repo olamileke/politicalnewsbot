@@ -172,6 +172,6 @@ dispatcher.add_handler(unknown_handler)
 
 # Starting the bot
 updater.start_webhook(listen=environ.get("BOT_HOST"), port=environ.get("BOT_PORT"), url_path=environ.get("WEBHOOK_PATH"))
-updater.bot.set_webhook(url="{0}{1}".format(environ.get("BOT_URL"), token))
+updater.bot.set_webhook(url="{0}{1}".format(environ.get("BOT_URL"), environ.get("WEBHOOK_PATH")))
 
 updater.idle()
